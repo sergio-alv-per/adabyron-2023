@@ -5,15 +5,11 @@ intercambios = []
 for i in range(N):
     intercambios.append(int(input()))
 
-mat = [[-1000000 for _ in range(N)] for _ in range(N)]
+mejor = 0
+actual = 0
 
-for dif in range(0, N):
-    for i in range(N-dif):
-        j = i+dif
-        if dif == 0:
-            mat[i][j] = intercambios[i]
-        else:
-            mat[i][j] = max(mat[i][j-1], mat[i+1][j], sum(intercambios[i:j+1]))
+for i in intercambios:
+    actual = max(actual + i, 0)
+    mejor = max(actual, mejor)
 
-if N:
-    print(mat[i][j])
+print(mejor)
