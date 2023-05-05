@@ -1,10 +1,8 @@
-import heapq
-
 # Filas y columnas de la mazmorra
 r, c = [int(x) for x in input().split(" ")]
 
 # Vida del héroe
-v = int(input())
+vida_heroe = int(input())
 
 # Se almacena en una matriz la mazmorra, invirtiendo los valores
 # De esta forma, se almacena para cada habitación los puntos de vida
@@ -18,7 +16,7 @@ for _ in range(r):
 
 # Caso especial de una mazmorra de una habitación
 if r == 1 and c == 1:
-    if vida_perdida[0][0] < v:
+    if vida_perdida[0][0] < vida_heroe:
         print("yes")
     else:
         print("no")
@@ -45,10 +43,8 @@ for i in range(r-1, -1, -1):
             minima_vida_perdida_inf_der[i][j] = min(vida_perdida[i][j], minima_vida_perdida_inf_der[i][j+1], minima_vida_perdida_inf_der[i+1][j])
 
 
-# Se aplica el algoritmo A*. Los nodos vivos se almacenan en un montículo,
-# ordenado minimizando el valor de f del nodo.
-nodos_por_procesar = [(vida_perdida[0][0], 0, {"posicion":(0,0), "g":vida_perdida[0][0], "h":0, "f":0})]
-dict_nodos_por_procesar = {(0,0): vida_perdida[0][0]}
+# Se aplica el algoritmo A*.
+nodos_por_procesar = {(0,0): {"posicion": (0,0), "g":vida_perdida[0][0], "h":0, "f":0}}
 nodos_procesados = {}
 
 # Función que devuelve las posiciones a las que puede ir el héroe desde una
@@ -64,45 +60,41 @@ def sucesores(posicion):
 
 
 existe_camino = False
-# Variable auxiliar para mantener el orden de inserción en el montículo
-contador_heap = 1
 
 # Aplicación de A*
 while nodos_por_procesar and not existe_camino:
-    _, _, q = heapq.heappop(nodos_por_procesar)
-    del dict_nodos_por_procesar[q["posicion"]]
+    posicion_actual, nodo_actual = min(nodos_por_procesar.items(), key=lambda x: x[1]["f"])
+    del nodos_por_procesar[posicion_actual]
 
-    for pos in sucesores(q["posicion"]):
-        nodo = {}
-        nodo["posicion"] = pos
-        nodo["g"] = q["g"] + vida_perdida[pos[0]][pos[1]]
+    for posicion_siguiente in sucesores(nodo_actual["posicion"]):
+        nodo_siguiente = {}
+        nodo_siguiente["posicion"] = posicion_siguiente
+        nodo_siguiente["g"] = nodo_actual["g"] + vida_perdida[posicion_siguiente[0]][posicion_siguiente[1]]
 
-        if v - nodo["g"] <= 0:
+        if vida_heroe - nodo_siguiente["g"] <= 0:
             # Si el héroe pierde toda su vida al tomar este camino, se descarta
             # el nodo.
             continue
-        elif pos == (r-1, c-1):
+        elif posicion_siguiente == (r-1, c-1):
             # Se ha llegado a la habitación final y el héroe sigue vivo.
             # Se tiene que existe un camino.
             existe_camino = True
             break
         else:
             # Se calcula la heurística para este nodo
-            nodo["h"] = ((r-1 - pos[0]) + (c-1 - pos[1])) * minima_vida_perdida_inf_der[pos[0]][pos[1]]
-            nodo["f"] = nodo["g"] + nodo["h"]
+            nodo_siguiente["h"] = ((r-1 - posicion_siguiente[0]) + (c-1 - posicion_siguiente[1])) * minima_vida_perdida_inf_der[posicion_siguiente[0]][posicion_siguiente[1]]
+            nodo_siguiente["f"] = nodo_siguiente["g"] + nodo_siguiente["h"]
 
             # Se poda el nodo si ya se ha llegado a esta posición con mejor f
-            if pos in nodos_por_procesar and nodos_por_procesar[pos] <= nodo["f"]:
+            if posicion_siguiente in nodos_por_procesar and nodos_por_procesar[posicion_siguiente]["f"] <= nodo_siguiente["f"]:
                 continue
-            if pos in nodos_procesados and nodos_procesados[pos] <= nodo["f"]:
+            if posicion_siguiente in nodos_procesados and nodos_procesados[posicion_siguiente] <= nodo_siguiente["f"]:
                 continue
             else:
-                # Si no se poda el nodo, se añade al montículo
-                heapq.heappush(nodos_por_procesar, (nodo["f"], contador_heap, nodo))
-                contador_heap += 1
-                dict_nodos_por_procesar[pos] = nodo["f"]
+                # Si no se poda el nodo, se añade a los nodos por procesar
+                nodos_por_procesar[posicion_siguiente] = nodo_siguiente
     
-    nodos_procesados[q["posicion"]] = q["f"]
+    nodos_procesados[nodo_actual["posicion"]] = nodo_actual["f"]
 
 if existe_camino:
     print("yes")
